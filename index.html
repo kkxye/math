@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数学的浪漫</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #000;
+            overflow: hidden;
+            position: relative;
+            font-family: 'Arial', sans-serif;
+        }
+        #starCanvas {
+            position: absolute;
+            z-index: 1;
+        }
+        #heartCanvas {
+            position: absolute;
+            z-index: 2;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+            cursor: pointer;
+        }
+        #message {
+            position: absolute;
+            z-index: 3;
+            color: white;
+            font-size: 0;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ff3366, 0 0 20px #ff3366;
+            opacity: 0;
+            transition: all 1.5s ease-out;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="starCanvas"></canvas>
+    <canvas id="heartCanvas"></canvas>
+    <div id="message">I LOVE YOU</div>
+    
+    <script>
+        // 设置画布大小
+        const heartCanvas = document.getElementById("heartCanvas");
+        const starCanvas = document.getElementById("starCanvas");
+        const message = document.getElementById("message");
+        
+        function resizeCanvases() {
+            heartCanvas.width = starCanvas.width = window.innerWidth;
+            heartCanvas.height = starCanvas.height = window.innerHeight;
+            message.style.left = (window.innerWidth/2 - message.offsetWidth/2) + 'px';
+            message.style.top = (window.innerHeight/2 - message.offsetHeight/2) + 'px';
+        }
+        resizeCanvases();
+        
+        // 星空背景
+        const starCtx = starCanvas.getContext("2d");
+        const stars = [];
+        const starCount = 200;
+        
+        class Star {
+            constructor() {
+                this.reset(true);
+                this.z = Math.random() * 0.5 + 0.5;
+            }
+            
+            reset(initial = false) {
+                this.x = Math.random() * starCanvas.width;
+                this.y = initial ? Math.random() * starCanvas.height : starCanvas.height + 10;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.speed = Math.random() * 1 + 0.5;
+                this.opacity = Math.random() * 0.6 + 0.4;
+                this.twinkleSpeed = Math.random() * 0.05 + 0.01;
+                this.twinklePhase = Math.random() * Math.PI * 2;
+            }
+            
+            update() {
+                this.y -= this.speed * this.z;
+                this.twinklePhase += this.twinkleSpeed;
+                if (this.y < -10) this.reset();
+                this.currentOpacity = this.opacity * (0.7 + 0.3 * Math.sin(this.twinklePhase));
+            }
+            
+            draw() {
+                starCtx.beginPath();
+                starCtx.arc(this.x, this.y, this.size * this.z, 0, Math.PI * 2);
+                starCtx.fillStyle = `rgba(255, 255, 255, ${this.currentOpacity})`;
+                starCtx.fill();
+            }
+        }
+        
+        for (let i = 0; i < starCount; i++) {
+            stars.push(new Star());
+        }
+        
+        function animateStars() {
+            starCtx.fillStyle = "rgba(0, 0, 0, 0.1)";
+            starCtx.fillRect(0, 0, starCanvas.width, starCanvas.height);
+            stars.forEach(star => {
+                star.update();
+                star.draw();
+            });
+            requestAnimationFrame(animateStars);
+        }
+        
+        // 心跳爱心
+        const heartCtx = heartCanvas.getContext("2d");
+        let scale = 1;
+        let growing = false;
+        const maxScale = 1.2;
+        const minScale = 0.9;
+        const scaleSpeed = 0.005;
+        
+        // 烟花系统
+        let particles = [];
+        let isExploding = false;
+        let heartVisible = true;
+        
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.radius = Math.random() * 3 + 2;
+                this.speed = Math.random() * 5 + 2;
+                this.angle = Math.random() * Math.PI * 2;
+                this.friction = 0.93;
+                this.gravity = 0.1;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.015 + 0.01;
+                this.vx = Math.cos(this.angle) * this.speed;
+                this.vy = Math.sin(this.angle) * this.speed;
+                this.light = Math.random() * 0.4 + 0.6;
+            }
+            
+            update() {
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= this.decay;
+                this.light = Math.max(0, this.light - 0.01);
+            }
+            
+            draw() {
+                heartCtx.save();
+                heartCtx.globalAlpha = this.alpha;
+                
+                // 创建发光效果
+                const gradient = heartCtx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.radius * 2
+                );
+                gradient.addColorStop(0, this.color);
+                gradient.addColorStop(1, `rgba(255,255,255,0)`);
+                
+                heartCtx.fillStyle = gradient;
+                heartCtx.beginPath();
+                heartCtx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+                heartCtx.fill();
+                
+                heartCtx.fillStyle = this.color;
+                heartCtx.beginPath();
+                heartCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                heartCtx.fill();
+                
+                heartCtx.restore();
+            }
+        }
+        
+        function createExplosion(x, y) {
+            const particleCount = 150;
+            const colors = [
+                "#ff3366", "#ff6699", "#ff99cc", "#ffccff", 
+                "#ff6b6b", "#ff8e8e", "#ffb3b3", "#ffffff"
+            ];
+            
+            // 大爆炸效果
+            for (let i = 0; i < particleCount; i++) {
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                particles.push(new Particle(x, y, color));
+            }
+            
+            // 显示"I LOVE YOU"文字
+            message.style.fontSize = '0px';
+            message.style.opacity = '0';
+            setTimeout(() => {
+                message.style.fontSize = '48px';
+                message.style.opacity = '1';
+            }, 500);
+            
+            // 文字淡出
+            setTimeout(() => {
+                message.style.opacity = '0';
+            }, 2500);
+        }
+        
+        function drawHeart() {
+            if (!heartVisible) return;
+            
+            heartCtx.clearRect(0, 0, heartCanvas.width, heartCanvas.height);
+            heartCtx.save();
+            
+            const centerX = heartCanvas.width/2;
+            const centerY = heartCanvas.height/2;
+            
+            heartCtx.translate(centerX, centerY);
+            heartCtx.scale(scale, scale);
+            heartCtx.translate(-centerX, -centerY);
+            
+            // 绘制爱心
+            const gradient = heartCtx.createRadialGradient(
+                centerX, centerY, 50,
+                centerX, centerY, 150
+            );
+            gradient.addColorStop(0, "#ff0066");
+            gradient.addColorStop(1, "#ff6699");
+            
+            heartCtx.fillStyle = gradient;
+            heartCtx.shadowColor = "rgba(255, 51, 102, 0.7)";
+            heartCtx.shadowBlur = 30;
+            heartCtx.beginPath();
+            
+            for (let t = 0; t < 2 * Math.PI; t += 0.01) {
+                const x = 16 * Math.pow(Math.sin(t), 3);
+                const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+                heartCtx.lineTo(x * 5 + centerX, -y * 5 + centerY);
+            }
+            
+            heartCtx.closePath();
+            heartCtx.fill();
+            heartCtx.restore();
+        }
+        
+        function animateHeart() {
+            heartCtx.clearRect(0, 0, heartCanvas.width, heartCanvas.height);
+            
+            if (isExploding) {
+                // 更新和绘制所有粒子
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                    particles[i].draw();
+                }
+                
+                // 移除透明度为0的粒子
+                particles = particles.filter(p => p.alpha > 0);
+                
+                // 如果没有粒子了，恢复爱心
+                if (particles.length === 0) {
+                    isExploding = false;
+                    heartVisible = true;
+                }
+            } else if (heartVisible) {
+                if (growing) {
+                    scale += scaleSpeed;
+                    if (scale >= maxScale) growing = false;
+                } else {
+                    scale -= scaleSpeed;
+                    if (scale <= minScale) growing = true;
+                }
+                
+                drawHeart();
+            }
+            
+            requestAnimationFrame(animateHeart);
+        }
+        
+        // 点击爱心事件
+        heartCanvas.addEventListener('click', (e) => {
+            if (isExploding) return;
+            
+            isExploding = true;
+            heartVisible = false;
+            
+            const rect = heartCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            createExplosion(x, y);
+        });
+        
+        // 开始动画
+        animateStars();
+        animateHeart();
+        
+        // 窗口大小改变时重设画布大小
+        window.addEventListener('resize', () => {
+            resizeCanvases();
+        });
+    </script>
+</body>
+</html>
