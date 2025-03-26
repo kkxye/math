@@ -108,13 +108,13 @@
             requestAnimationFrame(animateStars);
         }
         
-        // 心跳爱心
+        // 心跳爱心 - 加快心跳速度
         const heartCtx = heartCanvas.getContext("2d");
         let scale = 1;
         let growing = false;
         const maxScale = 1.2;
         const minScale = 0.9;
-        const scaleSpeed = 0.005;
+        const scaleSpeed = 0.008; // 加快心跳速度
         
         // 烟花系统
         let particles = [];
@@ -187,11 +187,11 @@
                 particles.push(new Particle(x, y, color));
             }
             
-            // 显示"I LOVE YOU"文字
+            // 显示"I LOVE YOU"文字 - 字体更小
             message.style.fontSize = '0px';
             message.style.opacity = '0';
             setTimeout(() => {
-                message.style.fontSize = '48px';
+                message.style.fontSize = '28px'; // 从36px减小到28px
                 message.style.opacity = '1';
             }, 500);
             
